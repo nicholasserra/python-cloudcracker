@@ -43,22 +43,11 @@ class CloudCrackerConnection(object):
 
         url = '%s%s/dictionaries' % (self.api_url, format)
         r = urllib2.Request(url)
-
-        try:
-            response = urllib2.urlopen(r)
-        except urllib2.URLError, e:
-            try:
-                #probably provided an invalid format
-                error = json.loads(e.read())
-                raise CloudCrackerError(error['error'])
-            except json.JSONDecodeError:
-                raise CloudCrackerError
-
+        response = self.call(r)
         content = response.read()
         response.close()
 
         parsed = json.loads(content)
-
         return parsed
         
     def submit_job(self, format, email, dictionary, size, uploaded_file, essid=None):
@@ -88,16 +77,7 @@ class CloudCrackerConnection(object):
         body, content_type = self.encode_multipart_formdata(params)
         headers = {'Content-Type': content_type, 'Content-Length': str(len(body))}
         r = urllib2.Request(url, body, headers)
-
-        try:
-            response = urllib2.urlopen(r)
-        except urllib2.URLError, e:
-            try:
-                error = json.loads(e.read())
-                raise CloudCrackerError(error['error'])
-            except json.JSONDecodeError:
-                raise CloudCrackerError
-
+        response = self.call(r)
         content = response.read()
         response.close()
 
@@ -109,40 +89,19 @@ class CloudCrackerConnection(object):
 
         url = '%s%s/job/%s' % (self.api_url, format, job_reference)
         r = urllib2.Request(url)
-
-        try:
-            response = urllib2.urlopen(r)
-        except urllib2.URLError, e:
-            try:
-                #probably provided an invalid format
-                error = json.loads(e.read())
-                raise CloudCrackerError(error.get('error'))
-            except json.JSONDecodeError:
-                raise CloudCrackerError
-
+        response = self.call(r)
         content = response.read()
         response.close()
 
         parsed = json.loads(content)
-
         return parsed['status'], self.status_codes[parsed['status']]
-        
+
     def grab_bitcoin_payment_info(self, format, job_reference):
         """Returns info to pay via Bitcoin"""
 
         url = '%s%s/payment/%s' % (self.api_url, format, job_reference)
         r = urllib2.Request(url)
-
-        try:
-            response = urllib2.urlopen(r)
-        except urllib2.URLError, e:
-            try:
-                #probably provided an invalid format
-                error = json.loads(e.read())
-                raise CloudCrackerError(error.get('error'))
-            except json.JSONDecodeError:
-                raise CloudCrackerError
-
+        response = self.call(r)
         content = response.read()
         response.close()
 
@@ -156,7 +115,12 @@ class CloudCrackerConnection(object):
         body, content_type = self.encode_multipart_formdata(params)
         headers = {'Content-Type': content_type}
         r = urllib2.Request(url, body, headers)
+        response = self.call(r)
 
+        #api returns blank 200 on success
+        response.close()
+        
+    def call(self, r):
         try:
             response = urllib2.urlopen(r)
         except urllib2.URLError, e:
@@ -165,9 +129,7 @@ class CloudCrackerConnection(object):
                 raise CloudCrackerError(error['error'])
             except json.JSONDecodeError:
                 raise CloudCrackerError
-
-        #api returns blank 200 on success
-        response.close()
+        return response
 
     #thank you shazow https://github.com/shazow/urllib3
     def encode_multipart_formdata(self, fields, boundary=None):
