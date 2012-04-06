@@ -2,11 +2,18 @@ import urllib2
 import mimetypes
 import mimetools
 import codecs
-import simplejson as json
 from io import BytesIO
 
+try:
+    import simplejson as json
+except ImportError:
+    try:
+        import json
+    except ImportError:
+        from django.utils import simplejson as json
+
 writer = codecs.lookup('utf-8')[3]
-__version__ = '0.0.1'
+__version__ = '0.0.3'
 
 def get_content_type(filename):
     return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
@@ -127,7 +134,7 @@ class CloudCrackerConnection(object):
             try:
                 error = json.loads(e.read())
                 raise CloudCrackerError(error['error'])
-            except json.JSONDecodeError:
+            except ValueError:
                 raise CloudCrackerError
         return response
 
