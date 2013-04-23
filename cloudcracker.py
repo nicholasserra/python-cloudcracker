@@ -38,6 +38,7 @@ class CloudCrackerConnection(object):
         Cloud Cracker API class
         '''
         self.api_url = 'https://cloudcracker.com/api/'
+
         self.status_codes = {
             0: 'The job has been submitted, but valid payment has not yet been received.',
             1: 'The job has been submitted and valid payment has been received.',
@@ -46,7 +47,10 @@ class CloudCrackerConnection(object):
         }
 
     def grab_dictionaries(self, format):
-        """Grab dictionary options"""
+        """
+        Grab dictionary options.
+        Format can be: ['wpa', 'ntlm', 'cryptsha512', 'cryptmd5']
+        """
 
         url = '%s%s/dictionaries' % (self.api_url, format)
         r = urllib2.Request(url)
@@ -56,11 +60,11 @@ class CloudCrackerConnection(object):
 
         parsed = json.loads(content)
         return parsed
-        
+
     def submit_job(self, format, email, dictionary, size, uploaded_file, essid=None):
         """
         Submit your cracking job.
-        Format can be: ['wpa', 'ntlm']
+        Format can be: ['wpa', 'ntlm', 'cryptsha512', 'cryptmd5']
         """
 
         url = '%s%s/job' % (self.api_url, format)
@@ -74,7 +78,7 @@ class CloudCrackerConnection(object):
         if format == 'wpa':
             params['pcap'] = (uploaded_file.name, uploaded_file.read())
         elif format == 'ntlm':
-            params['ntlm'] = (uploaded_file.name, uploaded_file.read())
+            params['hashes'] = (uploaded_file.name, uploaded_file.read())
         else:
             raise AttributeError('Specify a valid format.')
 
@@ -113,7 +117,7 @@ class CloudCrackerConnection(object):
         response.close()
 
         return json.loads(content)
-        
+
     def send_stripe_payment(self, format, job_reference, token):
         """Sends your stripe token to pay for a cracking job"""
         url = '%s%s/payment/%s' % (self.api_url, format, job_reference)
@@ -126,7 +130,7 @@ class CloudCrackerConnection(object):
 
         #api returns blank 200 on success
         response.close()
-        
+
     def call(self, r):
         try:
             response = urllib2.urlopen(r)
