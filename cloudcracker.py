@@ -33,11 +33,11 @@ class CloudCrackerError(Exception):
     pass
 
 class CloudCrackerConnection(object):
-    def __init__(self):
+    def __init__(self, test=False):
         '''
         Cloud Cracker API class
         '''
-        self.api_url = 'https://cloudcracker.com/api/'
+        self.api_url = 'https://cloudcracker.com%s/api/' % ('/test' if test else '')
 
         self.status_codes = {
             0: 'The job has been submitted, but valid payment has not yet been received.',
